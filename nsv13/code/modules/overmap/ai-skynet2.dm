@@ -370,7 +370,7 @@ GLOBAL_LIST_EMPTY(ai_goals)
 				message_admins("<span class='warning'>For youtube-dl shortcuts like ytsearch: please use the appropriate full url from the website.</span>")
 				return
 			var/shell_scrubbed_input = shell_url_scrub(web_sound_input)
-			var/list/output = world.shelleo("[ytdl] --format \"bestaudio\[ext=mp3]/best\[ext=mp4]\[height<=360]/bestaudio\[ext=m4a]/bestaudio\[ext=aac]\" --dump-single-json --no-playlist -- \"[shell_scrubbed_input]\"")
+			var/list/output = world.shelleo("[ytdl] --geo-bypass --format \"bestaudio\[ext=mp3]/best\[ext=mp4]\[height<=360]/bestaudio\[ext=m4a]/bestaudio\[ext=aac]\" --dump-single-json --no-playlist -- \"[shell_scrubbed_input]\"")
 			var/errorlevel = output[SHELLEO_ERRORLEVEL]
 			var/stdout = output[SHELLEO_STDOUT]
 			var/stderr = output[SHELLEO_STDERR]
@@ -400,20 +400,23 @@ GLOBAL_LIST_EMPTY(ai_goals)
 	if(OM.faction == alignment)
 		OM.hail(pick(greetings), name)
 	assemble(current_system)
+	var/list/result = null
+	if(audio_cues?.len)
+		result = get_internet_sound(pick(audio_cues))
 	if(OM.faction != alignment)
 		if(OM.alpha >= 150) //Sensor cloaks my boy, sensor cloaks
 			OM.hail(pick(taunts), name)
 			last_encounter_time = world.time
-			if(audio_cues?.len)
-				OM.play_music(pick(audio_cues))
-
+			if(result)
+				OM.play_music(result)
 
 ///Pass in a youtube link, have it played ONLY on that overmap. This should be called by code or admins only.
-/obj/structure/overmap/proc/play_music(url)
+/obj/structure/overmap/proc/play_music(list/result, url)
 	set waitfor = FALSE //Don't hold up the jump
-	if(!istext(url))
-		return FALSE
-	var/list/result = get_internet_sound(url)
+	if(url) //In case admins ever feel like using this....
+		if(!istext(url))
+			return FALSE
+		result = get_internet_sound(url)
 	if(!result || !islist(result))
 		return
 	var/web_sound_url = result[1] //this is cringe but it works
